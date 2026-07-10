@@ -118,12 +118,14 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  dumy_thrashold_for_test[8]={1000,1000,1000,1000,1000,1000,1000,1000};
-  sensor_thrashold = dumy_thrashold_for_test ;
+  uint32_t dumy_thrashold_for_test[8]={1000,1000,1000,1000,1000,1000,1000,1000};
+  for(int i =0;i<8;i++){
+  sensor_thrashold[i] = dumy_thrashold_for_test[i] ;
+  }
   while (1)
   {
     /* USER CODE END WHILE */
-     drive();
+     drive(&htim1);
     HAL_Delay(2);
     /* USER CODE BEGIN 3 */
   }
