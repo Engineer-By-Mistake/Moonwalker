@@ -26,6 +26,7 @@
 #include "ssd1306.h"
 #include "stm32f4xx_hal_adc.h"
 #include <stdint.h>
+#include"followin.h"
 
 
 /* USER CODE END Includes */
@@ -109,18 +110,21 @@ int main(void)
   MX_TIM1_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  MPU6050_Init();
-  ssd1306_Init();
+ // MPU6050_Init();
+ // ssd1306_Init();
   motor_pin_set(&htim1);
   HAL_ADC_Start_DMA(&hadc1, (void*)sensor_read, 9);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  dumy_thrashold_for_test[8]={1000,1000,1000,1000,1000,1000,1000,1000};
+  sensor_thrashold = dumy_thrashold_for_test ;
   while (1)
   {
     /* USER CODE END WHILE */
-
+     drive();
+    HAL_Delay(2);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
