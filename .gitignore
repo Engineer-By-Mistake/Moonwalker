@@ -1,0 +1,11 @@
+build/
+mx.scratch/
+!.settings/
+.vscode/
+cmake/
+.settings/
+# Ignore compiled binaries
+*.elf
+*.hex
+*.bin
+*.map
