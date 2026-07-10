@@ -7,7 +7,7 @@
 #include <stdbool.h>
 static states previous_state = straight;
 states states_global;
-int32_t sensor_thrashold[8];
+uint32_t sensor_thrashold[8];
 typedef struct {
     bool left[3];
     bool rigPID_STRAIGHT[3];

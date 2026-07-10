@@ -66,7 +66,7 @@ static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-volatile uint16_t sensor_read[9];
+ volatile uint16_t sensor_read[9];
 
 /* USER CODE END PFP */
 
