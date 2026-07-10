@@ -50,7 +50,7 @@ typedef enum {
 } states;
 extern uint32_t max_sensor_reading[8];
 extern uint32_t min_sensor_reading[8];
-extern uint32_t sensor_thrashold[8];
+extern int32_t sensor_thrashold[8];
 extern const uint32_t sensor_weights[8];
 extern volatile uint32_t sensor_read[9]; 
 extern pid_error PID_STRAIGHT;

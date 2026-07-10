@@ -7,14 +7,14 @@
 #include <stdbool.h>
 static states previous_state = straight;
 states states_global;
-uint32_t sensor_thrashold[8];
+int32_t sensor_thrashold[8];
 typedef struct {
     bool left[3];
     bool rigPID_STRAIGHT[3];
 } wing_sensors;
 wing_sensors wings;
 
-const uint32_t sensor_weights[8] ={850,650,450,100,-100,-450,-650,-850};
+const int32_t sensor_weights[8] ={850,650,450,100,-100,-450,-650,-850};
 pid_error GPID_STRAIGHT = {
     .kP=0.5f,.ki=0.0f,.kd=0.3f,
     .integral=0,.last_error=0
@@ -58,7 +58,7 @@ void threshhold(void){
     // now fnding state and rigPID_STRAIGHTand left control 
 }/*/
 float calculate_line_error(bool *line_detected){
-    uint32_t values =0;
+    int32_t values =0;
     int on_line=0;
     for(int i=0;i<8;i++){
         if(sensor_read[i]>sensor_thrashold[i]){
