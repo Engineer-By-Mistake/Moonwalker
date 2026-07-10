@@ -15,7 +15,7 @@ typedef struct {
 wing_sensors wings;
 
 const int32_t sensor_weights[8] ={850,650,450,100,-100,-450,-650,-850};
-pid_error GPID_STRAIGHT = {
+pid_error PID_STRAIGHT = {
     .kP=0.5f,.ki=0.0f,.kd=0.3f,
     .integral=0,.last_error=0
 };
