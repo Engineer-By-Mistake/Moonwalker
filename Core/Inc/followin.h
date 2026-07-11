@@ -16,6 +16,9 @@
 #define DERIVATIVE_LIMIT         3000.0f
 #define INTEGRAL_MAX             5000.0f
 #define INTEGRAL_MIN            -5000.0f
+#define TURN_CONFIRM_CYCLES         5
+#define INTERSECTION_TURN_CYCLES    180
+#define INTERSECTION_COOLDOWN_CYCLES 50
 typedef struct{
     float kP;
     float kd;
@@ -57,6 +60,10 @@ extern pid_error PID_STRAIGHT;
 extern pid_error PID_CORNER;
 extern biease biease_global;
 extern states states_global;
+void read_wing_sensors(void);
+bool center_black_most(void);
+bool detect_intersection(void);
+void run_intersection_maneuver(TIM_HandleTypeDef *c);
 float calculate_line_error(bool *line_detected);
 float pid_compute(pid_error *pid, float error);
 void activate_pid(pid_error *pid, float current_error);
