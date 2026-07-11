@@ -27,8 +27,10 @@
 #include "stm32f4xx_hal_adc.h"
 #include <stdint.h>
 #include"followin.h"
-
-
+#include "ssd1306_fonts.h"
+#include "stdio.h"
+extern float last_known_error;
+extern states states_global;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,6 +69,15 @@ static void MX_TIM1_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
  volatile uint16_t sensor_read[9];
+ const char* get_state_string(states s) {
+    switch(s) {
+        case straight: return "Straight";
+        case corner: return "Corner";
+        case intersection_pending: return "Intersect";
+        case lost: return "Lost";
+        default: return "Unknown";
+    }
+}
 
 /* USER CODE END PFP */
 
@@ -110,7 +121,7 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
  // MPU6050_Init();
- // ssd1306_Init();
+  ssd1306_Init();
   motor_pin_set(&htim1);
   HAL_ADC_Start_DMA(&hadc1, (void*)sensor_read, 9);
   /* USER CODE END 2 */
@@ -121,9 +132,32 @@ int main(void)
   for(int i =0;i<8;i++){
   sensor_thrashold[i] = dumy_thrashold_for_test[i] ;
   }
+  uint32_t last_oled_update = 0;
+  char display_buf[32];
   while (1)
   {
-     drive(&htim1);
+    {
+    drive(&htim1);
+    
+    // Update screen every 100ms so we don't lag the motors
+    /*/if (HAL_GetTick() - last_oled_update > 100) {
+        last_oled_update = HAL_GetTick();
+        
+        ssd1306_Fill(Black);
+        
+        // Print Error
+        sprintf(display_buf, "Error: %.2d", (int)last_known_error);
+        ssd1306_SetCursor(2, 2);
+        ssd1306_WriteString(display_buf, Font_7x10, White);
+        
+        // Print State
+        sprintf(display_buf, "State: %s", get_state_string(states_global));
+        ssd1306_SetCursor(2, 14);
+        ssd1306_WriteString(display_buf, Font_7x10, White);
+        
+        ssd1306_UpdateScreen();
+    }/*/
+      drive(&htim1);
     HAL_Delay(2);
     /* USER CODE END WHILE */
 
@@ -131,7 +165,7 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
+}
 /**
   * @brief System Clock Configuration
   * @retval None

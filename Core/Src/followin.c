@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#define WING_INNER_WEIGHT   1200
 static states previous_state = straight;
 states states_global;
 biease biease_global = straight_biase; 
@@ -17,15 +18,18 @@ wing_sensors wings;
 static uint8_t intersection_counter = 0;
 static uint16_t intersection_maneuver_timer = 0;
 static uint16_t intersection_cooldown = 0;
+float last_known_error = 0.0f;
+static uint8_t right_turn_counter = 0;
+static uint8_t left_turn_counter = 0;
 uint32_t max_sensor_reading[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint32_t min_sensor_reading[8] = {4095, 4095, 4095, 4095, 4095, 4095, 4095, 4095};
 const int32_t sensor_weights[8] ={850,650,450,100,-100,-450,-650,-850};
 pid_error PID_STRAIGHT = {
-    .kP=0.3f,.ki=0.0f,.kd=0.1f,
+    .kP=0.4f,.ki=0.0f,.kd=0.15f,
     .integral=0,.last_error=0
 };
 pid_error PID_CORNER = {
-    .kP=0.2f,.ki=0.0f,.kd=0.1f,
+    .kP=0.3f,.ki=0.0f,.kd=0.2f,
     .integral=0,.last_error=0
 };
 void read_wing_sensors(void) {
@@ -122,8 +126,21 @@ float calculate_line_error(bool *line_detected){
         *line_detected=false;
         return 0.0f;
     }
-    *line_detected=true;
-    return (float) values/ (float) on_line; 
+       if (wings.right[1]) {          // right side = positive weight, matches your convention
+        values += WING_INNER_WEIGHT;
+        on_line++;
+    }
+    if (wings.left[1]) {
+        values += -WING_INNER_WEIGHT;
+        on_line++;
+    }
+
+    if(on_line == 0){
+        *line_detected = false;
+        return 0.0f;
+    }
+    *line_detected = true;
+    return (float) values / (float) on_line;
 }
 float pid_compute(pid_error *pid, float error){
     pid->integral +=error;
@@ -143,25 +160,64 @@ void reset_pid(pid_error *pid){
 void activate_pid(pid_error *pid,float current_error){
     pid->last_error=current_error;
 }
+bool detect_sharp_right(float error) {
+    bool right_wing = wings.right[1] || wings.right[2];
+    bool trending_out = error > (CORNER_ENTER_THRESHOLD * 0.5f);   // adjust once threshold is fixed
+
+    if (right_wing && trending_out) {
+        right_turn_counter++;
+        left_turn_counter = 0;
+    } else {
+        right_turn_counter = 0;
+    }
+    return (right_turn_counter >= TURN_CONFIRM_CYCLES);
+}
+
+bool detect_sharp_left(float error) {
+    bool left_wing = wings.left[1] || wings.left[2];
+    bool trending_out = error < -(CORNER_ENTER_THRESHOLD * 0.5f);
+
+    if (left_wing && trending_out) {
+        left_turn_counter++;
+        right_turn_counter = 0;
+    } else {
+        left_turn_counter = 0;
+    }
+    return (left_turn_counter >= TURN_CONFIRM_CYCLES);
+}
 void drive(TIM_HandleTypeDef *c) {
     read_wing_sensors();
 
     bool line = false;
     float error = calculate_line_error(&line);
 
-    // --- Priority 1: mid-maneuver, keep executing it ---
     if (states_global == intersection_pending) {
         run_intersection_maneuver(c);
         return;
     }
-
-    // --- Priority 2: line lost — active recovery, not silent motor freeze ---
-    if (!line) {
-        states_global = lost;
-        int dir = (PID_STRAIGHT.last_error >= 0) ? 1 : -1;
-        motor_control(dir * (int32_t)PIVOT_SPEED, -dir * (int32_t)PIVOT_SPEED, c);
+     if (line && detect_sharp_right(error)) {
+        motor_control(BASE_SPEED, -(int32_t)CORRECTION_SPEED, c);
+        right_turn_counter = 0;
+        states_global = straight;
+        activate_pid(&PID_STRAIGHT, 0.0f);
         return;
     }
+    if (line && detect_sharp_left(error)) {
+        motor_control(-(int32_t)CORRECTION_SPEED, BASE_SPEED, c);
+        left_turn_counter = 0;
+        states_global = straight;
+        activate_pid(&PID_STRAIGHT, 0.0f);
+        return;
+    }
+
+    if (!line) {
+        states_global = lost;
+        int dir = (last_known_error >= 0) ? 1 : -1;   // ← use this instead
+        motor_control(-dir * (int32_t)PIVOT_SPEED, dir * (int32_t)PIVOT_SPEED, c);
+        return;
+    }
+
+    last_known_error = error;  
 
     // --- Priority 3: check for new intersection (respecting cooldown) ---
     if (intersection_cooldown > 0) {

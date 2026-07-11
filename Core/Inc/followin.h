@@ -7,16 +7,16 @@
 #define BASE_SPEED        700u
 #define MAX_SPEED         950u
 #define CORNER_SPEED      ((uint32_t)(0.8f * BASE_SPEED))
-#define CORRECTION_SPEED  ((uint32_t)(0.6f * BASE_SPEED))
-#define PIVOT_SPEED       ((uint32_t)(0.5f * BASE_SPEED))
-#define INTERSECTION_SPEED ((uint32_t)(0.55f * BASE_SPEED))
-#define CORNER_ENTER_THRESHOLD   1500.0f
-#define CORNER_EXIT_THRESHOLD    1100.0f   // hysteresis band, lower than enter
+#define CORRECTION_SPEED  ((uint32_t)(0.85f * BASE_SPEED))
+#define PIVOT_SPEED       ((uint32_t)(0.75f * BASE_SPEED))
+#define INTERSECTION_SPEED ((uint32_t)(0.75f * BASE_SPEED))
+#define CORNER_ENTER_THRESHOLD   500.0f
+#define CORNER_EXIT_THRESHOLD    100.0f   // hysteresis band, lower than enter
 #define DEADZONE_PID             150.0f
 #define DERIVATIVE_LIMIT         3000.0f
 #define INTEGRAL_MAX             5000.0f
 #define INTEGRAL_MIN            -5000.0f
-#define TURN_CONFIRM_CYCLES         5
+#define TURN_CONFIRM_CYCLES         3
 #define INTERSECTION_TURN_CYCLES    180
 #define INTERSECTION_COOLDOWN_CYCLES 50
 typedef struct{
@@ -60,6 +60,7 @@ extern pid_error PID_STRAIGHT;
 extern pid_error PID_CORNER;
 extern biease biease_global;
 extern states states_global;
+
 void read_wing_sensors(void);
 bool center_black_most(void);
 bool detect_intersection(void);

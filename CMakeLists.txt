@@ -48,6 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 core/src/motor.c
 core/src/followin.c
 core/src/ssd1306.c
+core/src/ssd1306_fonts.c
 core/src/mpu6050.c
 
     # Add user sources here
