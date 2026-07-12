@@ -121,14 +121,14 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
  // MPU6050_Init();
-  ssd1306_Init();
+  //ssd1306_Init();
   motor_pin_set(&htim1);
   HAL_ADC_Start_DMA(&hadc1, (void*)sensor_read, 9);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint32_t dumy_thrashold_for_test[8]={1000,1000,1000,1000,1000,1000,1000,1000};
+  uint32_t dumy_thrashold_for_test[8]={800,800,800,800,800,800,800,800};
   for(int i =0;i<8;i++){
   sensor_thrashold[i] = dumy_thrashold_for_test[i] ;
   }
@@ -136,11 +136,13 @@ int main(void)
   char display_buf[32];
   while (1)
   {
-    {
+    int battry = 4*sensor_read[8];
+    
+    
     drive(&htim1);
     
     // Update screen every 100ms so we don't lag the motors
-    /*/if (HAL_GetTick() - last_oled_update > 100) {
+   /*/ if (HAL_GetTick() - last_oled_update > 100) {
         last_oled_update = HAL_GetTick();
         
         ssd1306_Fill(Black);
@@ -157,15 +159,15 @@ int main(void)
         
         ssd1306_UpdateScreen();
     }/*/
-      drive(&htim1);
+
     HAL_Delay(2);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+  
   /* USER CODE END 3 */
 }
-}
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -251,18 +253,9 @@ static void MX_ADC1_Init(void)
 
   /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_0;
-  sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = 2;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -506,11 +499,11 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB0 PB1 PB2 PB10
-                           PB12 PB13 PB5 PB8
-                           PB9 */
+                           PB12 PB13 PB3 PB4
+                           PB5 PB8 PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10
-                          |GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_5|GPIO_PIN_8
-                          |GPIO_PIN_9;
+                          |GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_3|GPIO_PIN_4
+                          |GPIO_PIN_5|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

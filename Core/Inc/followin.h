@@ -4,20 +4,20 @@
 #include <sys/types.h>
 #include "motor.h"
 #include <stdbool.h>
-#define BASE_SPEED        700u
+#define BASE_SPEED        800u
 #define MAX_SPEED         950u
 #define CORNER_SPEED      ((uint32_t)(0.8f * BASE_SPEED))
-#define CORRECTION_SPEED  ((uint32_t)(0.85f * BASE_SPEED))
-#define PIVOT_SPEED       ((uint32_t)(0.75f * BASE_SPEED))
-#define INTERSECTION_SPEED ((uint32_t)(0.75f * BASE_SPEED))
+#define CORRECTION_SPEED  ((uint32_t)(0.65f * BASE_SPEED))
+#define PIVOT_SPEED       ((uint32_t)(0.55f * BASE_SPEED))
+#define INTERSECTION_SPEED ((uint32_t)(0.55f * BASE_SPEED))
 #define CORNER_ENTER_THRESHOLD   500.0f
-#define CORNER_EXIT_THRESHOLD    100.0f   // hysteresis band, lower than enter
+#define CORNER_EXIT_THRESHOLD    400.0f   // hysteresis band, lower than enter
 #define DEADZONE_PID             150.0f
 #define DERIVATIVE_LIMIT         3000.0f
 #define INTEGRAL_MAX             5000.0f
 #define INTEGRAL_MIN            -5000.0f
 #define TURN_CONFIRM_CYCLES         3
-#define INTERSECTION_TURN_CYCLES    180
+#define INTERSECTION_TURN_CYCLES    120
 #define INTERSECTION_COOLDOWN_CYCLES 50
 typedef struct{
     float kP;
@@ -69,7 +69,7 @@ float calculate_line_error(bool *line_detected);
 float pid_compute(pid_error *pid, float error);
 void activate_pid(pid_error *pid, float current_error);
 void reset_pid(pid_error *pid);
-void drive(TIM_HandleTypeDef *c);
 void threshhold(void);
 void _right_left_detection(void);
+void drive(TIM_HandleTypeDef *c );
 #endif 

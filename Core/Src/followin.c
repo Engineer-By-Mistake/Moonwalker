@@ -8,7 +8,7 @@
 #define WING_INNER_WEIGHT   1200
 static states previous_state = straight;
 states states_global;
-biease biease_global = straight_biase; 
+biease biease_global = right; 
 uint32_t sensor_thrashold[8];
 typedef struct {
     bool left[3];
@@ -29,7 +29,7 @@ pid_error PID_STRAIGHT = {
     .integral=0,.last_error=0
 };
 pid_error PID_CORNER = {
-    .kP=0.3f,.ki=0.0f,.kd=0.2f,
+    .kP=0.5f,.ki=0.0f,.kd=0.3f,
     .integral=0,.last_error=0
 };
 void read_wing_sensors(void) {
@@ -89,10 +89,11 @@ bool detect_intersection(){
 void run_intersection_maneuver(TIM_HandleTypeDef *c) {
     switch (biease_global) {
         case right:
-            motor_control(BASE_SPEED, -(int32_t)INTERSECTION_SPEED, c);
+            motor_control(-(int32_t)INTERSECTION_SPEED, BASE_SPEED, c);
             break;
         case left:
-            motor_control(-(int32_t)INTERSECTION_SPEED, BASE_SPEED, c);
+            
+            motor_control(BASE_SPEED, -(int32_t)INTERSECTION_SPEED, c);
             break;
         case straight_biase:
         default:
