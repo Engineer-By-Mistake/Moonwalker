@@ -51,9 +51,14 @@ typedef enum {
     finished
 
 } states;
+typedef struct {
+    uint8_t left[3];
+    uint8_t right[3];
+} wing_sensors;
 extern uint32_t max_sensor_reading[8];
 extern uint32_t min_sensor_reading[8];
 extern uint32_t sensor_thrashold[8];
+extern wing_sensors wings;
 extern const int32_t sensor_weights[8];
 extern volatile uint16_t sensor_read[9]; 
 extern pid_error PID_STRAIGHT;
@@ -72,4 +77,5 @@ void reset_pid(pid_error *pid);
 void threshhold(void);
 void _right_left_detection(void);
 void drive(TIM_HandleTypeDef *c );
+void drive_test(TIM_HandleTypeDef *c);
 #endif 

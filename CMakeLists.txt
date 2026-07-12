@@ -50,6 +50,7 @@ core/src/followin.c
 core/src/ssd1306.c
 core/src/ssd1306_fonts.c
 core/src/mpu6050.c
+core/src/oled.c
 
     # Add user sources here
 )

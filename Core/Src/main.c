@@ -29,6 +29,7 @@
 #include"followin.h"
 #include "ssd1306_fonts.h"
 #include "stdio.h"
+#include "oled.h"
 extern float last_known_error;
 extern states states_global;
 /* USER CODE END Includes */
@@ -121,7 +122,7 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
  // MPU6050_Init();
-  //ssd1306_Init();
+  ssd1306_Init();
   motor_pin_set(&htim1);
   HAL_ADC_Start_DMA(&hadc1, (void*)sensor_read, 9);
   /* USER CODE END 2 */
@@ -132,41 +133,110 @@ int main(void)
   for(int i =0;i<8;i++){
   sensor_thrashold[i] = dumy_thrashold_for_test[i] ;
   }
-  uint32_t last_oled_update = 0;
-  char display_buf[32];
+  uint32_t last_oled_update = 0;  
+  bool in_setting = false;
+  bool fast_run_mode = false;
+  uint32_t last_btn_time = 0;
   while (1)
   {
-    int battry = 4*sensor_read[8];
-    
-    
-    drive(&htim1);
-    
-    // Update screen every 100ms so we don't lag the motors
-   /*/ if (HAL_GetTick() - last_oled_update > 100) {
-        last_oled_update = HAL_GetTick();
-        
-        ssd1306_Fill(Black);
-        
-        // Print Error
-        sprintf(display_buf, "Error: %.2d", (int)last_known_error);
-        ssd1306_SetCursor(2, 2);
-        ssd1306_WriteString(display_buf, Font_7x10, White);
-        
-        // Print State
-        sprintf(display_buf, "State: %s", get_state_string(states_global));
-        ssd1306_SetCursor(2, 14);
-        ssd1306_WriteString(display_buf, Font_7x10, White);
-        
-        ssd1306_UpdateScreen();
-    }/*/
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) == GPIO_PIN_RESET) {
+          if (HAL_GetTick() - last_btn_time > 200) { // 200ms debounce
+              fast_run_mode = !fast_run_mode;
+              last_btn_time = HAL_GetTick();
+              
+              if (fast_run_mode) {
+                  // Turn screen completely black once, then stop talking to it
+                  ssd1306_Fill(Black);
+                  ssd1306_UpdateScreen();
+              } else {
+                  motor_control(0, 0, &htim1); // Stop motors when exiting
+              }
+          }
+      }
 
-    HAL_Delay(2);
+      // If in fast run mode, drive and IMMEDIATELY restart the loop (skip screen)
+      if (fast_run_mode) {
+          drive(&htim1);
+          continue; 
+      }
+      
+      // --- 2. PB4: Scroll Menu or Change Setting ---
+     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4) == GPIO_PIN_RESET) {
+          if (HAL_GetTick() - last_btn_time > 200) {
+              if (!in_setting) {
+                  // Scroll main menu
+                  current_mode = (current_mode + 1) % MODE_COUNT;
+              } else {
+                  // Change the setting inside a menu
+                  if (current_mode == MODE_BIAS_SELECT) {
+                       biease_global = (biease_global + 1) % 3;
+                  }
+              }
+              last_btn_time = HAL_GetTick();
+          }
+      }
+
+      // --- 3. PB3: Enter or Exit Setting ---
+      if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3) == GPIO_PIN_RESET) {
+          if (HAL_GetTick() - last_btn_time > 200) {
+              in_setting = !in_setting; 
+              last_btn_time = HAL_GetTick();
+              
+              if (in_setting && current_mode == MODE_RUN) {
+                  // Blank the screen the exact moment we enter Run Mode from the menu
+                  ssd1306_Fill(Black);
+                  ssd1306_UpdateScreen();
+              }
+              
+              if (!in_setting) {
+                 motor_control(0, 0, &htim1); // Safety stop when exiting a mode
+              }
+          }
+      }
+
+      // --- 4. Motor Execution ---
+      if (in_setting && current_mode == MODE_RUN) {
+          drive(&htim1);
+          // The continue statement skips everything below this point! 
+          // The OLED never updates during the run.
+          continue; 
+      }
+
+      // --- 5. OLED Refresh (Only runs if NOT driving) ---
+      if (HAL_GetTick() - last_oled_update > 100) {
+          last_oled_update = HAL_GetTick();
+          
+          if (!in_setting) {
+              // Draw the Main Menu
+              ssd1306_Fill(Black);
+              ssd1306_SetCursor(2, 2);
+              ssd1306_WriteString("--- MAIN MENU ---", Font_7x10, White);
+              
+              ssd1306_SetCursor(2, 20);
+              if (current_mode == MODE_SENSOR_TEST) {
+                  ssd1306_WriteString("> Sensor Test", Font_7x10, White);
+              } else if (current_mode == MODE_RUN) {
+                  ssd1306_WriteString("> Run Mode", Font_7x10, White);
+              } else if (current_mode == MODE_TELEMETRY) {
+                  ssd1306_WriteString("> MODE_TELEMETRYs", Font_7x10, White);
+              } else if (current_mode == MODE_BIAS_SELECT) {
+                  ssd1306_WriteString("> Bias Select", Font_7x10, White);
+              }
+              
+              ssd1306_SetCursor(2, 50);
+              ssd1306_WriteString("PB3:Enter PB4:Next", Font_6x8, White);
+              ssd1306_UpdateScreen();
+          } else {
+              // Delegate to oled.c (for things like Sensor Test and Bias Select)
+              oled_mode_handler();
+          }
+      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  
+    }
   /* USER CODE END 3 */
-}
+ }
 
 /**
   * @brief System Clock Configuration
@@ -213,6 +283,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
 
 /**
   * @brief ADC1 Initialization Function

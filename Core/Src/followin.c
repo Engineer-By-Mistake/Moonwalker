@@ -10,10 +10,6 @@ static states previous_state = straight;
 states states_global;
 biease biease_global = right; 
 uint32_t sensor_thrashold[8];
-typedef struct {
-    bool left[3];
-    bool right[3];
-} wing_sensors;
 wing_sensors wings;
 static uint8_t intersection_counter = 0;
 static uint16_t intersection_maneuver_timer = 0;
@@ -271,4 +267,102 @@ void drive(TIM_HandleTypeDef *c) {
     if (right_speed > (int32_t)MAX_SPEED) right_speed = MAX_SPEED;
 
     motor_control(left_speed, right_speed, c);
+}
+//for sensor test only 
+void drive_test(TIM_HandleTypeDef *c) {
+    read_wing_sensors();
+
+    bool line = false;
+    float error = calculate_line_error(&line);
+    if (states_global == intersection_pending) {
+         switch (biease_global) {
+        case right:
+            //motor_control(-(int32_t)INTERSECTION_SPEED, BASE_SPEED, c);
+            break;
+        case left:
+            
+            //motor_control(BASE_SPEED, -(int32_t)INTERSECTION_SPEED, c);
+            break;
+        case straight_biase:
+        default:
+           // motor_control(BASE_SPEED, BASE_SPEED, c);
+            break;
+    }
+        return;
+    }
+     if (line && detect_sharp_right(error)) {
+        //motor_control(BASE_SPEED, -(int32_t)CORRECTION_SPEED, c);
+        right_turn_counter = 0;
+        states_global = straight;
+        activate_pid(&PID_STRAIGHT, 0.0f);
+        return;
+    }
+    if (line && detect_sharp_left(error)) {
+        //motor_control(-(int32_t)CORRECTION_SPEED, BASE_SPEED, c);
+        left_turn_counter = 0;
+        states_global = straight;
+        activate_pid(&PID_STRAIGHT, 0.0f);
+        return;
+    }
+
+    if (!line) {
+        states_global = lost;
+        int dir = (last_known_error >= 0) ? 1 : -1;   // ← use this instead
+       // motor_control(-dir * (int32_t)PIVOT_SPEED, dir * (int32_t)PIVOT_SPEED, c);
+        return;
+    }
+
+    last_known_error = error;  
+
+    // --- Priority 3: check for new intersection (respecting cooldown) ---
+    if (intersection_cooldown > 0) {
+        intersection_cooldown--;
+    } else if (detect_intersection()) {
+        states_global = intersection_pending;
+        intersection_maneuver_timer = 0;
+        return;   // maneuver starts next cycle
+    }
+
+    // --- Priority 4: normal corner/straight PID with hysteresis ---
+    if (previous_state == straight || previous_state == corner) {
+        if (fabsf(error) > CORNER_ENTER_THRESHOLD) {
+            states_global = corner;
+        } else if (fabsf(error) < CORNER_EXIT_THRESHOLD) {
+            states_global = straight;
+        } else {
+            states_global = previous_state;
+        }
+    } else {
+        states_global = straight;
+    }
+
+    if (fabsf(error) < DEADZONE_PID) error = 0.0f;
+
+    pid_error *active;
+    uint32_t base_speed;
+    if (states_global == corner) {
+        active = &PID_CORNER;
+        base_speed = CORNER_SPEED;
+        if (previous_state != corner) activate_pid(&PID_CORNER, error);
+        reset_pid(&PID_STRAIGHT);
+    } else {
+        active = &PID_STRAIGHT;
+        base_speed = BASE_SPEED;
+        if (previous_state != straight) activate_pid(&PID_STRAIGHT, error);
+        reset_pid(&PID_CORNER);
+    }
+
+    previous_state = states_global;
+
+    float correction = pid_compute(active, error);
+    if (correction > (float)MAX_SPEED) correction = (float)MAX_SPEED;
+    if (correction < -(float)MAX_SPEED) correction = -(float)MAX_SPEED;
+
+    int32_t left_speed  = (int32_t)base_speed + (int32_t)correction;
+    int32_t right_speed = (int32_t)base_speed - (int32_t)correction;
+
+    if (left_speed  > (int32_t)MAX_SPEED) left_speed  = MAX_SPEED;
+    if (right_speed > (int32_t)MAX_SPEED) right_speed = MAX_SPEED;
+
+    
 }
