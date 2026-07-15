@@ -122,15 +122,16 @@ void oled_show_telemetry(void) {
     ssd1306_SetCursor(2, 30);
     ssd1306_WriteString(line2, Font_6x8, White);
 
-   float vbat = 4*sensor_read[8];
-    vbat=3.3*(vbat/4095);
-    vbat=vbat*((float)58/(float)11);
-    char vbat_str[20];
-    snprintf(vbat_str, sizeof(vbat_str), "%f", vbat);
-    sprintf(line3, "Batt:%d V",(int)vbat);
+  /*/float vbat = sensor_read[8];
+  float vrefint = sensor_read[9];
+  uint16_t vrefint_cal = *(__IO uint16_t *)(0x1FFF7A2A);
+    float vdda = 3.3f * ((float)vrefint_cal / (float)vrefint); 
+    vbat = 4.0f * ((float)vbat / 4095.0f) * vdda;             // raw ADC count, 0–4095                        // undo STM32's internal VBAT ÷4 scaling → voltage at the VBAT pin (after your divider)
+    vbat = vbat * ((float)55.0f / 10.3f);     // undo YOUR external divider → actual pack voltage
+    sprintf(line3, "Batt:%d  V",(int)vbat);
     ssd1306_SetCursor(2, 42);
     ssd1306_WriteString(line3, Font_6x8, White);
-    drive_test(&htim1);
+    drive_test(&htim1);/*/
     ssd1306_UpdateScreen();
     
 }
