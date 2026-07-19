@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #define SPEED_SMOOTHING   0.2f   // 0.0-1.0, higher = snappier/less smooth, lower = smoother/slower response
 #define BASE_SPEED        800u
-#define MAX_SPEED         950u
+#define MAX_SPEED         999u
 #define CORNER_SPEED      ((uint32_t)(0.75f * BASE_SPEED))
 #define CORRECTION_SPEED  ((uint32_t)(0.65f * BASE_SPEED))
 #define PIVOT_SPEED       ((uint32_t)(0.75f * BASE_SPEED))

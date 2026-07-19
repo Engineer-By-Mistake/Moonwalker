@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #define WING_INNER_WEIGHT   1200
-#define MIN_WHEEL_SPEED   0
+#define MIN_WHEEL_SPEED   100
 #define MIN_STATE_DWELL_CYCLES 6 
 static uint16_t state_dwell_counter = 0;
 
@@ -33,7 +33,7 @@ pid_error PID_STRAIGHT = {
     .integral=0,.last_error=0
 };
 pid_error PID_CORNER = {
-    .kP=0.9f,.ki=0.01f,.kd=0.5f,
+    .kP=0.9f,.ki=0.0000f,.kd=0.5f,
     .integral=0,.last_error=0
 };
 void read_wing_sensors(void) {
